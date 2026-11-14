@@ -245,7 +245,10 @@
     if (e.target.id === "copyMemo") copy(document.getElementById("tallyMemo").textContent);
   });
 
-  // ---------- photos: filled from assets/photos/photos.json by slot ----------
+  // ---------- photos: filled by slot, lazily, at the size the screen needs ----------
+  // The published build inlines photos.json as window.RLOM_PHOTOS (no extra request); the source
+  // folder falls back to fetching it. Each photo has WebP copies in assets/photos/opt/ at
+  // <name>-800 and -1600 (the hero also -1200 and -2000), made by tools/optimize-images.py.
   // A slot names files first (exact), then slot prefixes from photos.json.
   var SLOT_MAP = {
     hero: ["hero-mothers-certificates.jpg", "hero"], "birth-certificates": ["hero-certificate-day.jpg", "birth-certificates"],
@@ -254,7 +257,18 @@
   };
   var GALLERY = ["nomena-sahambavy-women.jpg", "landscape-terraces.jpg", "children-parade.jpg", "conference-congregation.jpg", "pastors-bikes.jpg",
     "women-community.jpg", "river-crossing.jpg", "birth-certificates-moms.jpg", "hero-gathering.jpg", "vbs-parachute.jpg", "hero-procession.jpg"];
-  fetch("assets/photos/photos.json").then(function (r) { return r.ok ? r.json() : []; }).then(function (list) {
+  var DPR = Math.min(window.devicePixelRatio || 1, 2);
+  function opt(file, w) { return "assets/photos/opt/" + file.replace(/\.[a-z]+$/i, "") + "-" + w + ".webp"; }
+  function sizeFor(node) { return (node.clientWidth || window.innerWidth) * DPR > 820 ? 1600 : 800; }
+  var lazy = "IntersectionObserver" in window ? new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      var t = e.target; lazy.unobserve(t);
+      t.style.backgroundImage = "url('" + opt(t.dataset.photo, sizeFor(t)) + "')";
+    });
+  }, { rootMargin: "600px 0px" }) : null;
+
+  function usePhotos(list) {
     if (!Array.isArray(list)) return;
     function find(names) {
       for (var j = 0; j < names.length; j++) {
@@ -270,16 +284,22 @@
       var p = list.filter(function (x) { return x.file === f; })[0]; if (!p) return;
       var fig = document.createElement("figure");
       fig.className = "gal" + (p.height > p.width ? " tall" : "");
-      fig.innerHTML = '<img loading="lazy" src="assets/photos/' + p.file + '" alt="' + String(p.caption || "").replace(/"/g, "&quot;") + '"><figcaption>' + (p.caption || "") + "</figcaption>";
+      var alt = String(p.caption || "").replace(/"/g, "&quot;");
+      fig.innerHTML = '<img loading="lazy" decoding="async" width="' + p.width + '" height="' + p.height + '" src="' + opt(p.file, 800) +
+        '" srcset="' + opt(p.file, 800) + ' 800w, ' + opt(p.file, 1600) + ' 1600w" sizes="(max-width:600px) 78vw, 420px" alt="' + alt + '"><figcaption>' + (p.caption || "") + "</figcaption>";
       gal.appendChild(fig);
     });
     document.querySelectorAll("[data-slot]").forEach(function (node) {
       var p = find(SLOT_MAP[node.dataset.slot] || [node.dataset.slot]); if (!p) return;
-      var target = node.classList.contains("hero") ? node : node.querySelector(".story-img, .founder-img");
+      var isHero = node.classList.contains("hero");
+      var target = isHero ? node : node.querySelector(".story-img, .founder-img");
       if (!target) return;
-      target.style.backgroundImage = "url('assets/photos/" + p.file + "')";
       if (p.caption) target.setAttribute("title", p.caption);
-      if (node.classList.contains("hero")) node.classList.add("has-photo");
+      if (isHero) { node.classList.add("has-photo"); return; } // hero photo is set in CSS and preloaded in <head>
+      target.dataset.photo = p.file;
+      if (lazy) lazy.observe(target); else target.style.backgroundImage = "url('" + opt(p.file, sizeFor(target)) + "')";
     });
-  }).catch(function () {});
+  }
+  if (window.RLOM_PHOTOS) usePhotos(window.RLOM_PHOTOS);
+  else fetch("assets/photos/photos.json").then(function (r) { return r.ok ? r.json() : []; }).then(usePhotos).catch(function () {});
 })();
