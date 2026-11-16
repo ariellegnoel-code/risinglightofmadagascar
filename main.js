@@ -252,8 +252,8 @@
   // A slot names files first (exact), then slot prefixes from photos.json.
   var SLOT_MAP = {
     hero: ["hero-mothers-certificates.jpg", "hero"], "birth-certificates": ["hero-certificate-day.jpg", "birth-certificates"],
-    "school-rebuilt": ["school-after.jpg", "school-before-after"], classroom: ["school-children-yard.jpg", "classroom"],
-    bikes: ["pastors-bikes-church.jpg", "pastor-bikes"], edmond: ["edmond-community.jpg", "edmond"], arlette: ["arlette"], nomena: ["nomena"]
+    "school-rebuilt": ["school-metal-classroom.jpg", "school-before-after"], classroom: ["andromivonga-teacher.jpg", "classroom"],
+    bikes: ["pastors-bikes-church.jpg", "pastor-bikes"], edmond: ["edmond-community.jpg", "edmond"], arlette: ["arlette"], nomena: ["nomena"], sarah: ["board-sarah.jpg"]
   };
   var GALLERY = ["nomena-sahambavy-women.jpg", "landscape-terraces.jpg", "children-parade.jpg", "conference-congregation.jpg", "pastors-bikes.jpg",
     "women-community.jpg", "river-crossing.jpg", "birth-certificates-moms.jpg", "hero-gathering.jpg", "vbs-parachute.jpg", "hero-procession.jpg"];
